@@ -18,16 +18,6 @@
 
 #include "atomic_wrapper.h"
 
-// clang emit atomic libcall for 64-bit size struct (with 2 or more members)
-// workaround: use union of a 64-bit integer and original struct
-#ifdef __clang__
-#define CLANG_64BIT_CLASS_MEMBER_START union { std::uint64_t dummy_64bit_member; struct { // NOLINT
-#define CLANG_64BIT_CLASS_MEMBER_END   }; }; // NOLINT
-#else
-#define CLANG_64BIT_CLASS_MEMBER_START
-#define CLANG_64BIT_CLASS_MEMBER_END
-#endif
-
 namespace yakushima {
 
 /**
@@ -36,7 +26,7 @@ namespace yakushima {
  * so it can't declare default constructor. Therefore, it should use init function to
  * initialize before using this class object.
  */
-class node_version64_body {
+class alignas(sizeof(std::uint64_t)) node_version64_body {
 public:
     using vinsert_delete_type = std::uint32_t;
     using vsplit_type = std::uint32_t;
@@ -127,7 +117,6 @@ public:
     void set_splitting(const bool new_splitting) { splitting = new_splitting; }
 
 private:
-CLANG_64BIT_CLASS_MEMBER_START
     /**
      * These details is based on original paper Fig. 3.
      * Declaration order is because class size does not exceed 8 bytes.
@@ -173,7 +162,6 @@ CLANG_64BIT_CLASS_MEMBER_START
      * @details It tells whether the node is interior or border.
      */
     vsplit_type border : 1;
-CLANG_64BIT_CLASS_MEMBER_END
 };
 
 inline std::ostream& operator<<(std::ostream& out, // NOLINT
