@@ -18,6 +18,16 @@
 
 #include "atomic_wrapper.h"
 
+// clang emit atomic libcall for 64-bit size struct (with 2 or more members)
+// workaround: use union of a 64-bit integer and original struct
+#ifdef __clang__
+#define CLANG_64BIT_CLASS_MEMBER_START union { std::uint64_t dummy_64bit_member; struct { // NOLINT
+#define CLANG_64BIT_CLASS_MEMBER_END   }; }; // NOLINT
+#else
+#define CLANG_64BIT_CLASS_MEMBER_START
+#define CLANG_64BIT_CLASS_MEMBER_END
+#endif
+
 namespace yakushima {
 
 /**
@@ -117,6 +127,7 @@ public:
     void set_splitting(const bool new_splitting) { splitting = new_splitting; }
 
 private:
+CLANG_64BIT_CLASS_MEMBER_START
     /**
      * These details is based on original paper Fig. 3.
      * Declaration order is because class size does not exceed 8 bytes.
@@ -162,6 +173,7 @@ private:
      * @details It tells whether the node is interior or border.
      */
     vsplit_type border : 1;
+CLANG_64BIT_CLASS_MEMBER_END
 };
 
 inline std::ostream& operator<<(std::ostream& out, // NOLINT
